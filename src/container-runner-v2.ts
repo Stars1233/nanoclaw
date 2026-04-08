@@ -14,7 +14,13 @@ import { CONTAINER_RUNTIME_BIN, hostGatewayArgs, readonlyMountArgs, stopContaine
 import { getAgentGroup } from './db/agent-groups.js';
 import { log } from './log.js';
 import { validateAdditionalMounts } from './mount-security.js';
-import { markContainerIdle, markContainerRunning, markContainerStopped, sessionDbPath, sessionDir } from './session-manager.js';
+import {
+  markContainerIdle,
+  markContainerRunning,
+  markContainerStopped,
+  sessionDbPath,
+  sessionDir,
+} from './session-manager.js';
 import type { AgentGroup, Session } from './types-v2.js';
 
 const onecli = new OneCLI({ url: ONECLI_URL });
@@ -146,13 +152,20 @@ function buildMounts(agentGroup: AgentGroup, session: Session): VolumeMount[] {
   fs.mkdirSync(claudeDir, { recursive: true });
   const settingsFile = path.join(claudeDir, 'settings.json');
   if (!fs.existsSync(settingsFile)) {
-    fs.writeFileSync(settingsFile, JSON.stringify({
-      env: {
-        CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-        CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD: '1',
-        CLAUDE_CODE_DISABLE_AUTO_MEMORY: '0',
-      },
-    }, null, 2) + '\n');
+    fs.writeFileSync(
+      settingsFile,
+      JSON.stringify(
+        {
+          env: {
+            CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
+            CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD: '1',
+            CLAUDE_CODE_DISABLE_AUTO_MEMORY: '0',
+          },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
   }
 
   // Sync container skills
@@ -174,7 +187,10 @@ function buildMounts(agentGroup: AgentGroup, session: Session): VolumeMount[] {
   if (fs.existsSync(agentRunnerSrc)) {
     const srcIndex = path.join(agentRunnerSrc, 'index-v2.ts');
     const cachedIndex = path.join(groupRunnerDir, 'index-v2.ts');
-    const needsCopy = !fs.existsSync(groupRunnerDir) || !fs.existsSync(cachedIndex) || fs.statSync(srcIndex).mtimeMs > fs.statSync(cachedIndex).mtimeMs;
+    const needsCopy =
+      !fs.existsSync(groupRunnerDir) ||
+      !fs.existsSync(cachedIndex) ||
+      fs.statSync(srcIndex).mtimeMs > fs.statSync(cachedIndex).mtimeMs;
     if (needsCopy) {
       fs.cpSync(agentRunnerSrc, groupRunnerDir, { recursive: true });
     }
@@ -193,14 +209,24 @@ function buildMounts(agentGroup: AgentGroup, session: Session): VolumeMount[] {
   // Additional mounts from container config
   const containerConfig = agentGroup.container_config ? JSON.parse(agentGroup.container_config) : {};
   if (containerConfig.additionalMounts) {
-    const validated = validateAdditionalMounts(containerConfig.additionalMounts, agentGroup.name, !!agentGroup.is_admin);
+    const validated = validateAdditionalMounts(
+      containerConfig.additionalMounts,
+      agentGroup.name,
+      !!agentGroup.is_admin,
+    );
     mounts.push(...validated);
   }
 
   return mounts;
 }
 
-async function buildContainerArgs(mounts: VolumeMount[], containerName: string, session: Session, agentGroup: AgentGroup, agentIdentifier?: string): Promise<string[]> {
+async function buildContainerArgs(
+  mounts: VolumeMount[],
+  containerName: string,
+  session: Session,
+  agentGroup: AgentGroup,
+  agentIdentifier?: string,
+): Promise<string[]> {
   const args: string[] = ['run', '--rm', '--name', containerName];
 
   // Environment
@@ -234,7 +260,10 @@ async function buildContainerArgs(mounts: VolumeMount[], containerName: string, 
     }
   }
 
+  // Override entrypoint: compile agent-runner source, run v2 entry point (no stdin)
+  args.push('--entrypoint', 'bash');
   args.push(CONTAINER_IMAGE);
+  args.push('-c', 'cd /app && npx tsc --outDir /tmp/dist 2>&1 >&2 && ln -sf /app/node_modules /tmp/dist/node_modules && node /tmp/dist/index-v2.js');
 
   return args;
 }
