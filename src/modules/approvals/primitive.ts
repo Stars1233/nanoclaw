@@ -210,7 +210,6 @@ export interface RequestApprovalOptions {
 export async function requestApproval(opts: RequestApprovalOptions): Promise<void> {
   const { session, action, payload, title, question, agentName } = opts;
 
-  // A specific approver wins; else all admins of the session's group.
   const approvers = opts.approverUserId ? [opts.approverUserId] : pickApprover(session.agent_group_id);
   if (approvers.length === 0) {
     notifyAgent(session, `${action} failed: no owner or admin configured to approve.`);

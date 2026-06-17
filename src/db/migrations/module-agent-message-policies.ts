@@ -2,11 +2,7 @@ import type Database from 'better-sqlite3';
 
 import type { Migration } from './index.js';
 
-/**
- * Per-message approval gate on an agent-to-agent connection. A row gates
- * messages from→to (PK enforces one per direction); no row = free flow.
- * `approver` is the specific admin/owner of the target who approves — required.
- */
+/** Per-message approval gate on an agent-to-agent connection; no row = free flow. */
 export const moduleAgentMessagePolicies: Migration = {
   version: 17,
   name: 'agent-message-policies',

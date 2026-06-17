@@ -223,10 +223,8 @@ export async function routeAgentMessage(msg: RoutableAgentMessage, session: Sess
     throw new Error(`target agent group ${targetAgentGroupId} not found for message ${msg.id}`);
   }
 
-  // Approval-policy gate: if a policy gates this edge, hold the message in the
-  // approval payload and return without routing. Returning (not throwing) lets
-  // the delivery loop consume the outbound row; `applyA2aMessageGate` re-routes
-  // on approve. Self-messages have no policy, so they're never gated.
+  // Gated edge: hold the message and return (not throw) so the delivery loop
+  // consumes the outbound row; `applyA2aMessageGate` re-routes it on approve.
   if (!isSelf) {
     const policy = getMessagePolicy(sourceAgentGroupId, targetAgentGroupId);
     if (policy) {
@@ -259,13 +257,10 @@ export async function routeAgentMessage(msg: RoutableAgentMessage, session: Sess
   await performAgentRoute(msg, session, targetAgentGroupId);
 }
 
-/** Dispatch key joining the approval card (held message) to `applyA2aMessageGate`. */
 export const A2A_MESSAGE_GATE_ACTION = 'a2a_message_gate';
 
-/** Max message-body chars shown on the approval card (keeps within platform message limits). */
 const GATE_CARD_BODY_MAX = 1500;
 
-/** Best-effort extract of display text + attachment names from an outbound message's content JSON. */
 function parseMessageContent(contentStr: string): { text: string; files: string[] } {
   try {
     const parsed = JSON.parse(contentStr) as { text?: unknown; files?: unknown };
@@ -278,7 +273,6 @@ function parseMessageContent(contentStr: string): { text: string; files: string[
   }
 }
 
-/** Approval-card body: who → whom, the (truncated) message text, and attachment names. */
 function buildGateQuestion(sourceName: string, targetName: string, contentStr: string): string {
   const { text, files } = parseMessageContent(contentStr);
   const body = text.length > GATE_CARD_BODY_MAX ? `${text.slice(0, GATE_CARD_BODY_MAX)}… (truncated)` : text;

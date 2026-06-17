@@ -29,5 +29,4 @@ import { applyA2aMessageGate } from './message-gate.js';
 registerDeliveryAction('create_agent', handleCreateAgent);
 registerApprovalHandler('create_agent', applyCreateAgent);
 
-// Per-message approval gate: only the approve handler (the route is dispatched from delivery.ts).
 registerApprovalHandler(A2A_MESSAGE_GATE_ACTION, applyA2aMessageGate);

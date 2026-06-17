@@ -216,7 +216,6 @@ export interface AgentDestination {
   created_at: string;
 }
 
-/** Directed per-message approval gate; `approver` is the target admin/owner who approves (required). */
 export interface AgentMessagePolicy {
   from_agent_group_id: string;
   to_agent_group_id: string;

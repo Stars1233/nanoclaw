@@ -1,8 +1,4 @@
-/**
- * Approve handler for a held a2a message: reconstruct it from the payload and
- * re-route via `performAgentRoute`. `session` is the source session. Reject is
- * handled by the generic response-handler path (no handler needed here).
- */
+/** Approve handler for a held a2a message. (Reject is handled by the generic response-handler path.) */
 import { log } from '../../log.js';
 import type { ApprovalHandler } from '../approvals/index.js';
 import { performAgentRoute, type RoutableAgentMessage } from './agent-route.js';

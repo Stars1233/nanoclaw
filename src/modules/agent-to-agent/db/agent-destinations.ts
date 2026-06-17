@@ -116,7 +116,6 @@ export function deleteAllDestinationsTouching(agentGroupId: string): void {
   getDb()
     .prepare('DELETE FROM agent_destinations WHERE agent_group_id = ? OR (target_type = ? AND target_id = ?)')
     .run(agentGroupId, 'agent', agentGroupId);
-  // Drop any approval policies on either side of this group's edges too.
   deletePoliciesTouching(agentGroupId);
 }
 
